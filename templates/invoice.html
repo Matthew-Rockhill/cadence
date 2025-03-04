@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Invoices for {{ year_month }}</h1>
+            {% for invoice in invoices %}
+                <div class="card mb-4">
+                    <div class="card-header">Invoice for {{ invoice.student.student_first_name }} {{ invoice.student.student_last_name }}</div>
+                    <div class="card-body">
+                        <p><strong>Total Lessons:</strong> {{ invoice.lessons }}</p>
+                        <p><strong>Rate per Lesson:</strong> R{{ invoice.rate_per_lesson }}</p>
+                        <p><strong>Total Amount Owed:</strong> R{{ invoice.total_amount }}</p>
+                        <h3>Lesson Details</h3>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Student</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for lesson in lessons %}
+                                    {% if lesson.student == invoice.student %}
+                                        <tr>
+                                            <td>{{ lesson.lesson_date }}</td>
+                                            <td>{{ lesson.student.student_first_name }} {{ lesson.student.student_last_name }}</td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="alert alert-info">No invoices for {{ year_month }}.</div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mb-4">Cadence Dashboard</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">Students</div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for student in students %}
+                            <li class="list-group-item">{{ student.student_first_name }} {{ student.student_last_name }}
+                                <small class="text-muted"> - {{ student.student_mobile|default:"N/A" }} | {{ student.parent_first_name|default:"N/A" }} {{ student.parent_last_name|default:"N/A" }} - {{ student.parent_mobile|default:"N/A" }} - {{ student.parent_email|default:"N/A" }}</small>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item">No students yet.</li>
+                        {% endfor %}
+                    </ul>
+                    <a href="{% url 'add_student' %}" class="btn btn-primary mt-3">Add Student</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">Lessons</div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for lesson in lessons %}
+                            <li class="list-group-item">Lesson for {{ lesson.student.student_first_name }} {{ lesson.student.student_last_name }} on {{ lesson.lesson_date }}</li>
+                        {% empty %}
+                            <li class="list-group-item">No lessons logged yet.</li>
+                        {% endfor %}
+                    </ul>
+                    <a href="{% url 'log_lesson' %}" class="btn btn-primary mt-3">Log Lesson</a>
+                    <a href="{% url 'bulk_log_lessons' %}" class="btn btn-secondary mt-3">Bulk Log Lessons</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">Invoices (Running Tally)</div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for invoice in invoices %}
+                            <li class="list-group-item">Invoice for {{ invoice.student.student_first_name }} {{ invoice.student.student_last_name }} - {{ invoice.month }} - R{{ invoice.total_amount }}</li>
+                        {% empty %}
+                            <li class="list-group-item">No invoices yet.</li>
+                        {% endfor %}
+                    </ul>
+                    <form method="get" action="{% url 'generate_invoice' year_month='2025-03' %}" class="mt-3">
+                        <div class="input-group">
+                            <input type="text" name="year_month" class="form-control" placeholder="YYYY-MM" required>
+                            <button type="submit" class="btn btn-primary">Generate Invoice</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Log Lessons</h1>
+    <h2>Log a Lesson</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="button">Log Lesson</button>
+    </form>
+    <h3>Lesson List</h3>
+    <ul>
+        {% for lesson in lessons %}
+            <li>Lesson for {{ lesson.student.student_first_name }} {{ lesson.student.student_last_name }} on {{ lesson.lesson_date }}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Manage Students</h1>
+    <h2>Add Student</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="button">Add Student</button>
+    </form>
+    <h3>Student List</h3>
+    <ul>
+        {% for student in students %}
+            <li>{{ student.student_first_name }} {{ student.student_last_name }} - {{ student.student_mobile }} - {{ student.parent_first_name }} {{ student.parent_last_name }} - {{ student.parent_mobile }} - {{ student.parent_email }}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}
