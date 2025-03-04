@@ -1,17 +1,82 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>Log Lessons</h1>
-    <h2>Log a Lesson</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="button">Log Lesson</button>
-    </form>
-    <h3>Lesson List</h3>
-    <ul>
-        {% for lesson in lessons %}
-            <li>Lesson for {{ lesson.student.student_first_name }} {{ lesson.student.student_last_name }} on {{ lesson.lesson_date }}</li>
-        {% endfor %}
-    </ul>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">Log a Lesson</div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'log_lesson' %}">
+                        {% csrf_token %}
+                        <div class="form-group mb-3">
+                            <label for="{{ form.student.id_for_label }}">Student</label>
+                            {{ form.student }}
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="{{ form.lesson_date.id_for_label }}">Lesson Date</label>
+                            {{ form.lesson_date }}
+                        </div>
+                        <button type="submit" class="btn btn-primary">Log Lesson</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">Bulk Log Lessons</div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'bulk_log_lessons' %}">
+                        {% csrf_token %}
+                        <div class="form-group mb-3">
+                            <label for="student">Student</label>
+                            <select name="student" class="form-control" required>
+                                <option value="">Select a student</option>
+                                {% for student in students %}
+                                    <option value="{{ student.id }}">{{ student.student_first_name }} {{ student.student_last_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="dates">Dates (one per line, YYYY-MM-DD format)</label>
+                            <textarea name="dates" class="form-control" rows="5" placeholder="2025-03-01
+2025-03-08
+2025-03-15
+2025-03-22
+2025-03-29" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Bulk Log Lessons</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">All Lessons</div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Student</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lesson in lessons %}
+                                <tr>
+                                    <td>{{ lesson.lesson_date }}</td>
+                                    <td>{{ lesson.student.student_first_name }} {{ lesson.student.student_last_name }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="2">No lessons logged yet.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

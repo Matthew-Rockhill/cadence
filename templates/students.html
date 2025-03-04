@@ -1,17 +1,85 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>Manage Students</h1>
-    <h2>Add Student</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="button">Add Student</button>
-    </form>
-    <h3>Student List</h3>
-    <ul>
-        {% for student in students %}
-            <li>{{ student.student_first_name }} {{ student.student_last_name }} - {{ student.student_mobile }} - {{ student.parent_first_name }} {{ student.parent_last_name }} - {{ student.parent_mobile }} - {{ student.parent_email }}</li>
-        {% endfor %}
-    </ul>
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card mb-4">
+                <div class="card-header">Add New Student</div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'add_student' %}">
+                        {% csrf_token %}
+                        <div class="form-group mb-3">
+                            <label for="{{ form.student_first_name.id_for_label }}">First Name</label>
+                            {{ form.student_first_name }}
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="{{ form.student_last_name.id_for_label }}">Last Name</label>
+                            {{ form.student_last_name }}
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="{{ form.student_mobile.id_for_label }}">Mobile Number</label>
+                            {{ form.student_mobile }}
+                        </div>
+                        <h4>Parent/Guardian Information</h4>
+                        <div class="form-group mb-3">
+                            <label for="{{ form.parent_first_name.id_for_label }}">Parent First Name</label>
+                            {{ form.parent_first_name }}
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="{{ form.parent_last_name.id_for_label }}">Parent Last Name</label>
+                            {{ form.parent_last_name }}
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="{{ form.parent_mobile.id_for_label }}">Parent Mobile</label>
+                            {{ form.parent_mobile }}
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="{{ form.parent_email.id_for_label }}">Parent Email</label>
+                            {{ form.parent_email }}
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Student</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header">Students</div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Contact</th>
+                                <th>Parent</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                                <tr>
+                                    <td>{{ student.student_first_name }} {{ student.student_last_name }}</td>
+                                    <td>{{ student.student_mobile|default:"N/A" }}</td>
+                                    <td>
+                                        {% if student.parent_first_name or student.parent_last_name %}
+                                            {{ student.parent_first_name|default:"" }} {{ student.parent_last_name|default:"" }}
+                                            <br>
+                                            {{ student.parent_mobile|default:"" }}
+                                            <br>
+                                            {{ student.parent_email|default:"" }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="3">No students added yet.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
