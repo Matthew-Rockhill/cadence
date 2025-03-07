@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load form_tags %}
+
+{% block content %}
+    <div class="mb-6">
+        <h1 class="text-2xl font-semibold text-gray-900">Generate Invoices</h1>
+        <p class="mt-1 text-sm text-gray-600">Create invoices for specific time periods</p>
+    </div>
+
+    <div class="bg-white shadow rounded-lg p-6">
+        <form method="post">
+            {% csrf_token %}
+            <div class="space-y-8">
+                <!-- Period Selection -->
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900">Select Invoice Period</h3>
+                    <div class="mt-4 space-y-4">
+                        {% for choice in form.period_type %}
+                            <div class="flex items-start">
+                                <div class="flex items-center h-5">
+                                    {{ choice.tag }}
+                                </div>
+                                <div class="ml-3 text-sm">
+                                    <label for="{{ choice.id_for_label }}" class="font-medium text-gray-700">{{ choice.choice_label }}</label>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Custom Date Range -->
+                <div id="custom-date-section" class="border-t border-gray-200 pt-6">
+                    <h3 class="text-lg font-medium text-gray-900">Custom Date Range</h3>
+                    <p class="text-sm text-gray-500 mb-4">Only required if you selected "Custom Date Range" above</p>
+                    
+                    <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+                        <div>
+                            <label for="{{ form.start_date.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Start Date
+                            </label>
+                            <div class="mt-1">
+                                {{ form.start_date }}
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.end_date.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                End Date
+                            </label>
+                            <div class="mt-1">
+                                {{ form.end_date }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pt-5">
+                    <div class="flex justify-end">
+                        <a href="{% url 'invoice_list' %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Cancel
+                        </a>
+                        <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Generate Invoices
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle visibility of custom date section based on radio button selection
+            const radioButtons = document.querySelectorAll('input[name="period_type"]');
+            const customDateSection = document.getElementById('custom-date-section');
+            
+            function updateVisibility() {
+                const selectedValue = document.querySelector('input[name="period_type"]:checked').value;
+                if (selectedValue === 'custom') {
+                    customDateSection.style.display = 'block';
+                } else {
+                    customDateSection.style.display = 'none';
+                }
+            }
+            
+            // Initial check
+            updateVisibility();
+            
+            // Add event listeners
+            radioButtons.forEach(button => {
+                button.addEventListener('change', updateVisibility);
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,18 +1,20 @@
+# invoices/views.py
 from django.http import HttpResponse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 from io import BytesIO
 import os
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Invoice
+from .forms import InvoiceGenerationForm, FinalizeInvoiceForm
 from lessons.models import Lesson
-from students.models import Student  # Added missing import
+from students.models import Student 
 from django.contrib import messages
 from django.core.mail import EmailMessage
 from django.conf import settings
 import logging
-
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +28,7 @@ def generate_pdf_invoice(request, invoice_id):
         invoice = get_object_or_404(Invoice, pk=invoice_id)
         
         # Get lessons for this invoice
-        lessons = Lesson.objects.filter(
-            student=invoice.student,
-            lesson_date__startswith=invoice.month
-        ).order_by('lesson_date')
+        lessons = get_lessons_for_invoice(invoice)
         
         # Prepare context
         context = {
@@ -58,7 +57,7 @@ def generate_pdf_invoice(request, invoice_id):
         # If PDF generation failed
         logger.error(f"Error generating PDF for invoice {invoice_id}: PDF creation error")
         messages.error(request, "Error generating PDF invoice.")
-        return redirect('generate_invoice', year_month=invoice.month)
+        return redirect('generate_invoice')
     
     except Exception as e:
         logger.error(f"Error generating PDF for invoice {invoice_id}: {str(e)}")
@@ -78,13 +77,10 @@ def email_invoice(request, invoice_id):
         if not invoice.student.parent_email:
             messages.error(request, f"Cannot send email: {invoice.student.student_first_name} {invoice.student.student_last_name} does not have a parent email specified.")
             logger.error(f"Email invoice failed: No parent email for student {invoice.student.student_first_name} {invoice.student.student_last_name}")
-            return redirect('generate_invoice', year_month=invoice.month)
+            return redirect('view_invoice', invoice_id=invoice.id)
         
         # Get lessons for this invoice
-        lessons = Lesson.objects.filter(
-            student=invoice.student,
-            lesson_date__startswith=invoice.month
-        ).order_by('lesson_date')
+        lessons = get_lessons_for_invoice(invoice)
         
         # Prepare context
         context = {
@@ -114,7 +110,6 @@ Please find attached the invoice for {invoice.student.student_first_name}'s tuto
 
 Invoice Summary:
 - Number of lessons: {invoice.lessons}
-- Rate per lesson: R{invoice.rate_per_lesson}
 - Total amount due: R{invoice.total_amount}
 
 Payment Details:
@@ -147,51 +142,157 @@ Cadence Tutoring
             # Log and redirect
             messages.success(request, f"Invoice emailed to {invoice.student.parent_email} successfully!")
             logger.info(f"Invoice emailed to {invoice.student.parent_email} for student {invoice.student.student_first_name} {invoice.student.student_last_name}")
-            return redirect('generate_invoice', year_month=invoice.month)
+            return redirect('view_invoice', invoice_id=invoice.id)
         
         else:
             # PDF generation failed
             logger.error(f"Error emailing invoice {invoice_id}: PDF creation error")
             messages.error(request, "Error creating PDF for email attachment.")
-            return redirect('generate_invoice', year_month=invoice.month)
+            return redirect('view_invoice', invoice_id=invoice.id)
             
     except Exception as e:
         logger.error(f"Error emailing invoice {invoice_id}: {str(e)}")
         messages.error(request, f"Error emailing invoice: {str(e)}")
-        return redirect('generate_invoice', year_month=invoice.month)
+        return redirect('view_invoice', invoice_id=invoice.id)
+
+def get_lessons_for_invoice(invoice):
+    """Helper function to get lessons for an invoice based on its date range or month"""
+    if invoice.start_date and invoice.end_date:
+        # If we have a date range, use that
+        return Lesson.objects.filter(
+            student=invoice.student,
+            lesson_date__gte=invoice.start_date,
+            lesson_date__lte=invoice.end_date
+        ).order_by('lesson_date')
+    else:
+        # Otherwise use the month
+        return Lesson.objects.filter(
+            student=invoice.student,
+            lesson_date__startswith=invoice.month
+        ).order_by('lesson_date')
 
 @login_required
-def generate_invoice(request, year_month):
+def invoice_list(request):
     """
-    Generate or display invoice for a specific month
+    Display list of all invoices, both draft and final
     """
-    try:
-        # Default to current month if year_month is empty
-        if not year_month:
-            from datetime import datetime
-            year_month = datetime.now().strftime('%Y-%m')
+    draft_invoices = Invoice.objects.filter(status='draft').order_by('-month', 'student__student_last_name')
+    final_invoices = Invoice.objects.filter(status='final').order_by('-month', 'student__student_last_name')
+    
+    return render(request, 'invoice_list.html', {
+        'draft_invoices': draft_invoices,
+        'final_invoices': final_invoices,
+    })
+
+@login_required
+def view_invoice(request, invoice_id):
+    """
+    View a single invoice with all its details
+    """
+    invoice = get_object_or_404(Invoice, pk=invoice_id)
+    lessons = get_lessons_for_invoice(invoice)
+    finalize_form = FinalizeInvoiceForm(initial={'invoice_id': invoice.id})
+    
+    return render(request, 'view_invoice.html', {
+        'invoice': invoice,
+        'lessons': lessons,
+        'finalize_form': finalize_form,
+    })
+
+@login_required
+def generate_invoice(request):
+    """
+    Generate new invoices based on specific criteria
+    """
+    form = InvoiceGenerationForm(request.POST or None)
+    
+    if request.method == 'POST' and form.is_valid():
+        period_type = form.cleaned_data['period_type']
+        start_date = form.cleaned_data['start_date']
+        end_date = form.cleaned_data['end_date']
+        
+        try:
+            # Determine the month string for the invoice (using the first date of the range)
+            month_str = start_date.strftime('%Y-%m')
             
-        # Get invoices for the specified month
-        invoices = Invoice.objects.filter(month=year_month)
-        lessons = Lesson.objects.filter(lesson_date__startswith=year_month)
-        
-        # Create default invoices for all students with 0 lessons if none exist
-        if not invoices.exists():
-            for student in Student.objects.all():
-                Invoice.objects.get_or_create(
+            # Find all students who had lessons in this period
+            lessons_in_period = Lesson.objects.filter(
+                lesson_date__gte=start_date,
+                lesson_date__lte=end_date
+            )
+            
+            students_with_lessons = set(lessons_in_period.values_list('student', flat=True))
+            
+            # Create or update invoices for each student
+            for student_id in students_with_lessons:
+                student = Student.objects.get(pk=student_id)
+                
+                # Check if draft invoice exists for this month and student
+                invoice, created = Invoice.objects.get_or_create(
                     student=student,
-                    month=year_month,
-                    defaults={'lessons': 0, 'total_amount': 0.00}
+                    month=month_str,
+                    status='draft',
+                    defaults={
+                        'start_date': start_date,
+                        'end_date': end_date,
+                        'lessons': 0,
+                        'total_amount': 0.00
+                    }
                 )
-            invoices = Invoice.objects.filter(month=year_month)
-        
-        messages.success(request, f'Invoices generated for {year_month}')
-        logger.info(f'Invoices generated for {year_month}')
-        return render(request, 'invoice.html', {'invoices': invoices, 'lessons': lessons, 'year_month': year_month})
-    except Exception as e:
-        logger.error(f'Error generating invoice for {year_month}: {str(e)}')
-        messages.error(request, f'There was an error generating the invoice: {str(e)}')
-        return redirect('dashboard')
+                
+                # Find lessons for this student in this period
+                student_lessons = lessons_in_period.filter(student=student)
+                
+                # Update invoice
+                invoice.start_date = start_date
+                invoice.end_date = end_date
+                invoice.lessons = student_lessons.count()
+                
+                # Calculate total amount based on each lesson's duration and rate
+                total = 0
+                for lesson in student_lessons:
+                    if lesson.custom_rate:
+                        total += lesson.duration * lesson.custom_rate
+                    else:
+                        total += lesson.duration * invoice.rate_per_lesson
+                
+                invoice.total_amount = total
+                invoice.save()
+            
+            messages.success(request, f'Invoices generated for period {start_date} to {end_date}')
+            logger.info(f'Invoices generated for period {start_date} to {end_date}')
+            return redirect('invoice_list')
+                
+        except Exception as e:
+            logger.error(f'Error generating invoices: {str(e)}')
+            messages.error(request, f'There was an error generating invoices: {str(e)}')
+            return redirect('dashboard')
+    
+    return render(request, 'generate_invoice.html', {'form': form})
+
+@login_required
+def finalize_invoice(request):
+    """
+    Convert a draft invoice to final status
+    """
+    if request.method == 'POST':
+        form = FinalizeInvoiceForm(request.POST)
+        if form.is_valid():
+            invoice_id = form.cleaned_data['invoice_id']
+            invoice = get_object_or_404(Invoice, pk=invoice_id, status='draft')
+            
+            success, result = invoice.finalize()
+            
+            if success:
+                messages.success(request, f'Invoice for {invoice.student.student_first_name} {invoice.student.student_last_name} has been finalized')
+                return redirect('view_invoice', invoice_id=result.id)
+            else:
+                messages.error(request, f'Failed to finalize invoice: {result}')
+                return redirect('view_invoice', invoice_id=invoice_id)
+    
+    # If we get here, something's wrong
+    messages.error(request, 'Invalid request')
+    return redirect('invoice_list')
 
 @login_required
 def dashboard(request):
@@ -200,7 +301,7 @@ def dashboard(request):
     """
     # Import these within the function to avoid circular imports
     from datetime import datetime, timedelta
-    from django.db.models import Q
+    from django.db.models import Q, Sum
     
     # Get current date for default year-month
     current_date = datetime.now()
@@ -231,23 +332,31 @@ def dashboard(request):
         three_months.append(f"{year}-{month_num:02d}")
     
     # Query for invoices from the last three months
-    recent_invoices = Invoice.objects.filter(
-        Q(month=three_months[0]) | Q(month=three_months[1]) | Q(month=three_months[2])
+    recent_draft_invoices = Invoice.objects.filter(
+        status='draft',
+        month__in=three_months
     ).order_by('-month', 'student__student_last_name')
     
-    # All invoices for reference
-    all_invoices = Invoice.objects.all().order_by('-month', 'student__student_last_name')
+    recent_final_invoices = Invoice.objects.filter(
+        status='final',
+        month__in=three_months
+    ).order_by('-month', 'student__student_last_name')
+    
+    # Calculate summary statistics
+    total_draft_amount = Invoice.objects.filter(status='draft').aggregate(total=Sum('total_amount'))['total'] or 0
+    total_final_amount = Invoice.objects.filter(status='final').aggregate(total=Sum('total_amount'))['total'] or 0
+    total_lessons = Lesson.objects.count()
     
     context = {
         'students': students,
         'recent_lessons': recent_lessons,
         'all_lessons': all_lessons,
-        'recent_invoices': recent_invoices,
-        'all_invoices': all_invoices,
-        'lessons': all_lessons,  # For backward compatibility
-        'invoices': all_invoices,  # For backward compatibility
-        'current_year_month': current_year_month,  # Ensure this is always set
+        'recent_draft_invoices': recent_draft_invoices,
+        'recent_final_invoices': recent_final_invoices,
+        'total_draft_amount': total_draft_amount,
+        'total_final_amount': total_final_amount,
+        'total_lessons': total_lessons,
+        'current_year_month': current_year_month,
     }
     
     return render(request, 'dashboard.html', context)
-

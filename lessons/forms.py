@@ -13,11 +13,20 @@ class LessonForm(forms.ModelForm):
 
     class Meta:
         model = Lesson
-        fields = ['student', 'lesson_date']
+        fields = ['student', 'lesson_date', 'duration', 'custom_rate']
         widgets = {
             'lesson_date': forms.DateInput(attrs={
                 'type': 'date',
                 'class': 'mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md'
+            }),
+            'duration': forms.NumberInput(attrs={
+                'class': 'mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md',
+                'step': '0.5',
+                'min': '0.5'
+            }),
+            'custom_rate': forms.NumberInput(attrs={
+                'class': 'mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md',
+                'placeholder': 'Default rate will be used if blank'
             }),
         }
 
@@ -31,10 +40,32 @@ class BulkLessonForm(forms.Form):
     )
     
     dates = forms.CharField(
-        widget=forms.Textarea(attrs={
-            'rows': 5,
-            'placeholder': 'Enter dates one per line, e.g., 2025-03-01',
-            'class': 'shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mt-1 block w-full sm:text-sm border border-gray-300 rounded-md'
+        widget=forms.HiddenInput(attrs={
+            'id': 'bulk_dates',
         }),
-        help_text="Enter one date per line in YYYY-MM-DD format."
+        required=True
+    )
+    
+    duration = forms.DecimalField(
+        initial=1.0,
+        min_value=0.5,
+        max_value=10,
+        decimal_places=1,
+        widget=forms.NumberInput(attrs={
+            'class': 'mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md',
+            'step': '0.5',
+            'min': '0.5'
+        }),
+        help_text="Duration in hours for all selected dates"
+    )
+    
+    custom_rate = forms.DecimalField(
+        required=False,
+        min_value=0,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={
+            'class': 'mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md',
+            'placeholder': 'Default rate will be used if blank'
+        }),
+        help_text="Custom rate for all selected dates (leave blank to use default)"
     )

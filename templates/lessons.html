@@ -1,6 +1,13 @@
 {% extends 'base.html' %}
 {% load form_tags %}
 
+{% block extra_head %}
+<!-- Include Flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<!-- Include Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+{% endblock %}
+
 {% block content %}
     <div class="mb-6">
         <h1 class="text-2xl font-semibold text-gray-900">Lessons</h1>
@@ -39,6 +46,26 @@
                                 {{ form.lesson_date }}
                             </div>
                         </div>
+                        
+                        <div>
+                            <label for="{{ form.duration.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Duration (hours)
+                            </label>
+                            <div class="mt-1">
+                                {{ form.duration }}
+                            </div>
+                            <p class="mt-1 text-sm text-gray-500">E.g. 0.5 for 30 minutes, 1.0 for 1 hour</p>
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.custom_rate.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Custom Rate (Optional)
+                            </label>
+                            <div class="mt-1">
+                                {{ form.custom_rate }}
+                            </div>
+                            <p class="mt-1 text-sm text-gray-500">Leave blank to use default rate</p>
+                        </div>
 
                         <div>
                             <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -57,7 +84,7 @@
                     Bulk Log Lessons
                 </h3>
                 <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                    Record multiple sessions at once
+                    Record multiple sessions at once using the date picker
                 </p>
             </div>
             <div class="px-4 py-5 sm:p-6">
@@ -79,17 +106,34 @@
                         </div>
 
                         <div>
-                            <label for="dates" class="block text-sm font-medium text-gray-700">
-                                Dates (one per line, YYYY-MM-DD format)
+                            <label for="date_picker" class="block text-sm font-medium text-gray-700">
+                                Select Dates
                             </label>
                             <div class="mt-1">
-                                <textarea name="dates" rows="5" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="2025-03-01
-2025-03-08
-2025-03-15
-2025-03-22
-2025-03-29" required></textarea>
+                                <input type="text" id="date_picker" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="Click to select dates" required>
+                                {{ bulk_form.dates }}
                             </div>
-                            <p class="mt-2 text-sm text-gray-500">Enter one date per line in YYYY-MM-DD format.</p>
+                            <p class="mt-2 text-sm text-gray-500">Click on dates to select multiple days. Click again to deselect.</p>
+                        </div>
+                        
+                        <div>
+                            <label for="{{ bulk_form.duration.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Duration (hours)
+                            </label>
+                            <div class="mt-1">
+                                {{ bulk_form.duration }}
+                            </div>
+                            <p class="mt-1 text-sm text-gray-500">E.g. 0.5 for 30 minutes, 1.0 for 1 hour</p>
+                        </div>
+                        
+                        <div>
+                            <label for="{{ bulk_form.custom_rate.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Custom Rate (Optional)
+                            </label>
+                            <div class="mt-1">
+                                {{ bulk_form.custom_rate }}
+                            </div>
+                            <p class="mt-1 text-sm text-gray-500">Leave blank to use default rate</p>
                         </div>
 
                         <div>
@@ -120,6 +164,8 @@
                                 <tr>
                                     <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Date</th>
                                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Student</th>
+                                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Duration</th>
+                                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Rate</th>
                                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Day of Week</th>
                                     <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
                                         <span class="sr-only">Actions</span>
@@ -136,6 +182,16 @@
                                             {{ lesson.student.student_first_name }} {{ lesson.student.student_last_name }}
                                         </td>
                                         <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                            {{ lesson.duration }}h
+                                        </td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                            {% if lesson.custom_rate %}
+                                                R{{ lesson.custom_rate }} (custom)
+                                            {% else %}
+                                                Default
+                                            {% endif %}
+                                        </td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                             {{ lesson.lesson_date|date:"l" }}
                                         </td>
                                         <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
@@ -146,7 +202,7 @@
                                     </tr>
                                 {% empty %}
                                     <tr>
-                                        <td colspan="4" class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6">
+                                        <td colspan="6" class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6">
                                             No lessons logged yet.
                                         </td>
                                     </tr>
@@ -158,4 +214,24 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Flatpickr date picker with multiple dates
+            const datePicker = flatpickr("#date_picker", {
+                mode: "multiple",
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "F j, Y",
+                minDate: "today",
+                weekNumbers: true,
+                enableTime: false,
+                onChange: function(selectedDates, dateStr, instance) {
+                    // Format dates and update hidden field
+                    const dates = selectedDates.map(date => instance.formatDate(date, "Y-m-d"));
+                    document.getElementById('bulk_dates').value = JSON.stringify(dates);
+                }
+            });
+        });
+    </script>
 {% endblock %}

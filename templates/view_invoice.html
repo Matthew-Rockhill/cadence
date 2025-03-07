@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-semibold text-gray-900">
+                    Invoice #{{ invoice.id }} - {{ invoice.student.student_first_name }} {{ invoice.student.student_last_name }}
+                </h1>
+                <p class="mt-1 text-sm text-gray-600">
+                    {% if invoice.start_date and invoice.end_date %}
+                        Period: {{ invoice.start_date|date:"M d, Y" }} to {{ invoice.end_date|date:"M d, Y" }}
+                    {% else %}
+                        Month: {{ invoice.month }}
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                <span class="px-3 py-1 {% if invoice.status == 'draft' %}bg-yellow-100 text-yellow-800{% else %}bg-green-100 text-green-800{% endif %} rounded-full text-xs font-semibold">
+                    {{ invoice.status|upper }}
+                </span>
+            </div>
+        </div>
+        <div class="flex mt-3">
+            <a href="{% url 'invoice_list' %}" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Invoices
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                Invoice Summary
+            </h3>
+        </div>
+        
+        <div class="border-t border-gray-200">
+            <div class="bg-gray-50 px-4 py-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div class="sm:col-span-1">
+                    <dt class="text-sm font-medium text-gray-500">
+                        Total Lessons
+                    </dt>
+                    <dd class="mt-1 text-lg font-semibold text-gray-900">
+                        {{ invoice.lessons }}
+                    </dd>
+                </div>
+                <div class="sm:col-span-1">
+                    <dt class="text-sm font-medium text-gray-500">
+                        Default Rate per Lesson
+                    </dt>
+                    <dd class="mt-1 text-lg font-semibold text-gray-900">
+                        R{{ invoice.rate_per_lesson }}
+                    </dd>
+                </div>
+                <div class="sm:col-span-1">
+                    <dt class="text-sm font-medium text-gray-500">
+                        Total Amount Due
+                    </dt>
+                    <dd class="mt-1 text-lg font-semibold text-indigo-600">
+                        R{{ invoice.total_amount }}
+                    </dd>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lesson Details -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                Lesson Details
+            </h3>
+        </div>
+        
+        <div class="border-t border-gray-200">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Day</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rate</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for lesson in lessons %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ lesson.lesson_date }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ lesson.lesson_date|date:"l" }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ lesson.duration }}h</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {% if lesson.custom_rate %}
+                                    R{{ lesson.custom_rate }} (custom)
+                                {% else %}
+                                    R{{ invoice.rate_per_lesson }} (default)
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {% if lesson.custom_rate %}
+                                    R{{ lesson.duration|floatformat:2|mult:lesson.custom_rate }}
+                                {% else %}
+                                    R{{ lesson.duration|floatformat:2|mult:invoice.rate_per_lesson }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                No lessons recorded for this invoice.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Payment Details -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                Payment Details
+            </h3>
+        </div>
+        <div class="px-4 py-5 sm:p-6">
+            <p class="text-sm text-gray-600">Please make payment to:</p>
+            <p class="text-sm text-gray-600 mt-2">Bank: Standard Bank</p>
+            <p class="text-sm text-gray-600">Account: 123456789</p>
+            <p class="text-sm text-gray-600">Reference: {{ invoice.student.student_last_name }}_{{ invoice.month }}</p>
+            <p class="text-sm text-gray-600 mt-2">Payment due within 14 days of receipt.</p>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="flex justify-between">
+        <div>
+            {% if invoice.status == 'draft' %}
+                <form method="post" action="{% url 'finalize_invoice' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="invoice_id" value="{{ invoice.id }}">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <i class="fas fa-check-circle mr-2"></i> Finalize Invoice
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'generate_pdf_invoice' invoice.id %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <i class="fas fa-download mr-2"></i> Download PDF
+            </a>
+            {% if invoice.student.parent_email %}
+                <a href="{% url 'email_invoice' invoice.id %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <i class="fas fa-envelope mr-2"></i> Email Invoice
+                </a>
+            {% else %}
+                <button disabled class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-400 cursor-not-allowed">
+                    <i class="fas fa-envelope mr-2"></i> Email (No Email Address)
+                </button>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Add a template filter for multiplication -->
+<script>
+    // This would normally be a Django template filter, 
+    // but for this example we'll just simulate it in JavaScript
+    function multiply(a, b) {
+        return (parseFloat(a) * parseFloat(b)).toFixed(2);
+    }
+</script>
+{% endblock %}

@@ -11,6 +11,7 @@
     {% tailwind_css %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-gray-50 h-screen flex overflow-hidden">
     <!-- Sidebar -->
@@ -34,7 +35,7 @@
                             <i class="fas fa-book-open mr-3 h-4 w-4"></i>
                             Lessons
                         </a>
-                        <a href="{% url 'dashboard' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-white hover:bg-indigo-600 {% if 'invoice' in request.resolver_match.url_name %}bg-indigo-800{% endif %}">
+                        <a href="{% url 'invoice_list' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-white hover:bg-indigo-600 {% if 'invoice' in request.resolver_match.url_name %}bg-indigo-800{% endif %}">
                             <i class="fas fa-file-invoice-dollar mr-3 h-4 w-4"></i>
                             Invoices
                         </a>
@@ -69,7 +70,7 @@
                         <a href="{% url 'dashboard' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Dashboard</a>
                         <a href="{% url 'students' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Students</a>
                         <a href="{% url 'lessons' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Lessons</a>
-                        <a href="{% url 'dashboard' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Invoices</a>
+                        <a href="{% url 'invoice_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Invoices</a>
                         <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
                     {% else %}
                         <a href="{% url 'login' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Login</a>
@@ -108,5 +109,7 @@
             </div>
         </main>
     </div>
+    
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
