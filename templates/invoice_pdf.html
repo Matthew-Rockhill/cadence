@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Invoice {{ invoice.month }} - {{ invoice.student.student_first_name }} {{ invoice.student.student_last_name }}</title>
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 1cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #4338ca;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .company-details {
+            text-align: left;
+            margin-bottom: 30px;
+        }
+        .client-details {
+            text-align: right;
+            margin-bottom: 30px;
+        }
+        .invoice-info {
+            background-color: #f3f4f6;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .invoice-info table {
+            width: 100%;
+        }
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .invoice-table th {
+            background-color: #4338ca;
+            color: white;
+            text-align: left;
+            padding: 8px;
+        }
+        .invoice-table td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        .invoice-table tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        .totals {
+            width: 40%;
+            margin-left: auto;
+            margin-bottom: 30px;
+        }
+        .totals table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .totals td {
+            padding: 8px;
+        }
+        .totals .total-row {
+            border-top: 2px solid #4338ca;
+            font-weight: bold;
+        }
+        .payment-info {
+            margin-top: 40px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 10px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Cadence Tutoring</h1>
+        <p>Student Lesson Invoice</p>
+    </div>
+    
+    <table width="100%">
+        <tr>
+            <td width="50%" class="company-details">
+                <p><strong>Cadence Tutoring Services</strong><br>
+                123 Education Street<br>
+                Tutoring City<br>
+                contact@cadencetutoring.com<br>
+                +27 123 456 7890</p>
+            </td>
+            <td width="50%" class="client-details">
+                <p><strong>Bill To:</strong><br>
+                {{ invoice.student.student_first_name }} {{ invoice.student.student_last_name }}<br>
+                {% if invoice.student.parent_first_name %}Parent: {{ invoice.student.parent_first_name }} {{ invoice.student.parent_last_name }}{% endif %}<br>
+                {% if invoice.student.parent_email %}{{ invoice.student.parent_email }}{% endif %}<br>
+                {% if invoice.student.parent_mobile %}{{ invoice.student.parent_mobile }}{% endif %}</p>
+            </td>
+        </tr>
+    </table>
+    
+    <div class="invoice-info">
+        <table>
+            <tr>
+                <td width="33%"><strong>Invoice Date:</strong> {% now "Y-m-d" %}</td>
+                <td width="33%"><strong>Invoice Period:</strong> {{ year_month }}</td>
+                <td width="33%"><strong>Invoice #:</strong> {{ invoice.id }}</td>
+            </tr>
+        </table>
+    </div>
+    
+    <table class="invoice-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Rate</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lesson in lessons %}
+                <tr>
+                    <td>{{ lesson.lesson_date }}</td>
+                    <td>Tutoring Session - {{ lesson.lesson_date|date:"l" }}</td>
+                    <td>R{{ invoice.rate_per_lesson }}</td>
+                    <td>R{{ invoice.rate_per_lesson }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4">No lessons recorded for this period.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="totals">
+        <table>
+            <tr>
+                <td>Subtotal:</td>
+                <td>R{{ invoice.total_amount }}</td>
+            </tr>
+            <tr>
+                <td>Tax:</td>
+                <td>R0.00</td>
+            </tr>
+            <tr class="total-row">
+                <td>Total Due:</td>
+                <td>R{{ invoice.total_amount }}</td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="payment-info">
+        <h3>Payment Details</h3>
+        <p>Please make payment to the following account:</p>
+        <p>
+            Bank: Standard Bank<br>
+            Account Number: 123456789<br>
+            Reference: {{ invoice.student.student_last_name }}_{{ year_month }}
+        </p>
+        <p>Payment due within 14 days of invoice date.</p>
+    </div>
+    
+    <div class="footer">
+        <p>Thank you for choosing Cadence Tutoring Services. We appreciate your business!</p>
+    </div>
+</body>
+</html>

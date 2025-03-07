@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Lesson
 from .forms import LessonForm, BulkLessonForm
@@ -27,8 +27,18 @@ def log_lesson(request):
             messages.error(request, 'There was an error logging the lesson.')
     else:
         form = LessonForm()
-    students = Student.objects.all()
-    return render(request, 'lessons.html', {'form': form, 'students': students})
+    
+    # Get all students and lessons
+    students = Student.objects.all().order_by('student_last_name', 'student_first_name')
+    lessons = Lesson.objects.all().order_by('-lesson_date')
+    bulk_form = BulkLessonForm()
+    
+    return render(request, 'lessons.html', {
+        'form': form,
+        'bulk_form': bulk_form,
+        'students': students,
+        'lessons': lessons
+    })
 
 @login_required
 def bulk_log_lessons(request):
@@ -53,13 +63,24 @@ def bulk_log_lessons(request):
         else:
             logger.error('Bulk lesson form invalid: ' + str(form.errors))
             messages.error(request, 'There was an error logging bulk lessons.')
-    students = Student.objects.all()
-    return render(request, 'lessons.html', {'students': students})
+    
+    # Redirect to the main lessons page
+    return redirect('lessons')
 
 @login_required
 def lesson_list(request):
-    lessons = Lesson.objects.all()
-    return render(request, 'lessons.html', {'lessons': lessons})
+    # Get all students and lessons
+    students = Student.objects.all().order_by('student_last_name', 'student_first_name')
+    lessons = Lesson.objects.all().order_by('-lesson_date')
+    form = LessonForm()
+    bulk_form = BulkLessonForm()
+    
+    return render(request, 'lessons.html', {
+        'form': form,
+        'bulk_form': bulk_form,
+        'students': students,
+        'lessons': lessons
+    })
 
 def update_or_create_invoice(student, year_month):
     try:
@@ -78,3 +99,23 @@ def update_or_create_invoice(student, year_month):
     except Exception as e:
         logger.error(f'Error updating/creating invoice for {student.student_first_name} {student.student_last_name} - {year_month}: {str(e)}')
         raise
+    
+@login_required
+def delete_lesson(request, pk):
+    lesson = get_object_or_404(Lesson, pk=pk)
+    student = lesson.student
+    lesson_date = lesson.lesson_date
+    year_month = lesson_date.strftime('%Y-%m')
+    
+    if request.method == 'POST':
+        lesson.delete()
+        messages.success(request, f'Lesson for {student.student_first_name} {student.student_last_name} on {lesson_date} deleted.')
+        logger.info(f'Lesson for student {student.student_first_name} {student.student_last_name} on {lesson_date} deleted.')
+        
+        # Update the invoice
+        update_or_create_invoice(student, year_month)
+        
+        # Redirect back to lessons page
+        return redirect('lessons')
+    
+    return render(request, 'confirm_delete_lesson.html', {'lesson': lesson})

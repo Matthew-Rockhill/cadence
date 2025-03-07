@@ -1,57 +1,112 @@
+{% load static %}
+{% load form_tags %}
+{% load tailwind_tags %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadence - Student Lesson Tracker</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <title>Cadence</title>
+    {% tailwind_css %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'dashboard' %}">Cadence</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+<body class="bg-gray-50 h-screen flex overflow-hidden">
+    <!-- Sidebar -->
+    <div class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-10">
+        <div class="flex-1 flex flex-col min-h-0 bg-indigo-700">
+            <div class="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
+                <div class="flex items-center flex-shrink-0 px-4">
+                    <span class="text-white text-2xl font-bold">Cadence</span>
+                </div>
+                <nav class="mt-8 flex-1 px-2 space-y-2">
                     {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'students' %}">Students</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'lessons' %}">Lessons</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'logout' %}">Logout</a>
-                        </li>
+                        <a href="{% url 'dashboard' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-white hover:bg-indigo-600 {% if request.resolver_match.url_name == 'dashboard' %}bg-indigo-800{% endif %}">
+                            <i class="fas fa-tachometer-alt mr-3 h-4 w-4"></i>
+                            Dashboard
+                        </a>
+                        <a href="{% url 'students' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-white hover:bg-indigo-600 {% if request.resolver_match.url_name == 'students' or request.resolver_match.url_name == 'add_student' %}bg-indigo-800{% endif %}">
+                            <i class="fas fa-user-graduate mr-3 h-4 w-4"></i>
+                            Students
+                        </a>
+                        <a href="{% url 'lessons' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-white hover:bg-indigo-600 {% if 'lessons' in request.resolver_match.url_name %}bg-indigo-800{% endif %}">
+                            <i class="fas fa-book-open mr-3 h-4 w-4"></i>
+                            Lessons
+                        </a>
+                        <a href="{% url 'dashboard' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-white hover:bg-indigo-600 {% if 'invoice' in request.resolver_match.url_name %}bg-indigo-800{% endif %}">
+                            <i class="fas fa-file-invoice-dollar mr-3 h-4 w-4"></i>
+                            Invoices
+                        </a>
+                        <div class="pt-6"></div>
+                        <a href="{% url 'logout' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-white hover:bg-indigo-600">
+                            <i class="fas fa-sign-out-alt mr-3 h-4 w-4"></i>
+                            Logout
+                        </a>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">Login</a>
-                        </li>
+                        <a href="{% url 'login' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-white hover:bg-indigo-600">
+                            <i class="fas fa-sign-in-alt mr-3 h-4 w-4"></i>
+                            Login
+                        </a>
                     {% endif %}
-                </ul>
+                </nav>
             </div>
         </div>
-    </nav>
-
-    <div class="container mt-4">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-
-        {% block content %}{% endblock %}
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Mobile header -->
+    <div class="md:hidden bg-indigo-700 w-full fixed z-10">
+        <div class="px-4 py-3 flex items-center justify-between">
+            <div>
+                <span class="text-white text-xl font-bold">Cadence</span>
+            </div>
+            <div x-data="{ open: false }">
+                <button @click="open = !open" class="text-white hover:text-gray-200 focus:outline-none">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'dashboard' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Dashboard</a>
+                        <a href="{% url 'students' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Students</a>
+                        <a href="{% url 'lessons' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Lessons</a>
+                        <a href="{% url 'dashboard' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Invoices</a>
+                        <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Login</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="md:pl-64 flex flex-col flex-1 overflow-auto">
+        <main class="flex-1 relative py-6 focus:outline-none" tabindex="0">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-10 md:pt-0">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="mb-4 {% if message.tags == 'error' %}bg-red-100 border-l-4 border-red-500 text-red-700{% elif message.tags == 'success' %}bg-green-100 border-l-4 border-green-500 text-green-700{% else %}bg-blue-100 border-l-4 border-blue-500 text-blue-700{% endif %} p-4 rounded shadow">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    {% if message.tags == 'error' %}
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    {% elif message.tags == 'success' %}
+                                        <i class="fas fa-check-circle"></i>
+                                    {% else %}
+                                        <i class="fas fa-info-circle"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm">{{ message }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
 </body>
 </html>

@@ -28,6 +28,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
+    # third-party apps
+    'tailwind',
+    'theme',
+    'django_browser_reload',
+
+    
     # local apps
     'users',
     'students',
@@ -43,6 +49,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_browser_reload.middleware.BrowserReloadMiddleware',
 ]
 
 ROOT_URLCONF = 'cadence.urls'
@@ -58,6 +65,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'cadence.context_processors.current_date_context',
             ],
         },
     },
@@ -123,6 +131,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Custom user model
 AUTH_USER_MODEL = 'users.User'
 
+# django-tailwind settings
+
+NPM_BIN_PATH = r"C:\Program Files\nodejs\npm.cmd"
+TAILWIND_APP_NAME = 'theme'
+# For production, set this to True
+TAILWIND_PRODUCTION = False
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -140,3 +158,12 @@ LOGGING = {
         },
     },
 }
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Or your preferred email provider
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your-email@gmail.com'  # Change to your email
+EMAIL_HOST_PASSWORD = 'your-app-password'  # Use app password for Gmail
+DEFAULT_FROM_EMAIL = 'Cadence Tutoring <your-email@gmail.com>'

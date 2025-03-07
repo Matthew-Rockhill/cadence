@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load form_tags %}
+
+{% block content %}
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-semibold text-gray-900">Edit Student</h1>
+                <p class="mt-1 text-sm text-gray-600">Update {{ student.student_first_name }} {{ student.student_last_name }}'s information</p>
+            </div>
+            <div>
+                <a href="{% url 'students' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <i class="fas fa-arrow-left -ml-1 mr-2 h-4 w-4"></i>
+                    Back to Students
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-5 md:mt-0">
+        <form method="post">
+            {% csrf_token %}
+            <div class="shadow sm:rounded-md sm:overflow-hidden">
+                <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
+                    <div class="grid grid-cols-6 gap-6">
+                        <div class="col-span-6 sm:col-span-3">
+                            <label for="{{ form.student_first_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                First Name
+                            </label>
+                            {{ form.student_first_name|add_class:"mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" }}
+                        </div>
+
+                        <div class="col-span-6 sm:col-span-3">
+                            <label for="{{ form.student_last_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Last Name
+                            </label>
+                            {{ form.student_last_name|add_class:"mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" }}
+                        </div>
+
+                        <div class="col-span-6 sm:col-span-3">
+                            <label for="{{ form.student_mobile.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Mobile Number
+                            </label>
+                            {{ form.student_mobile|add_class:"mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" }}
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-200 pt-4">
+                        <h4 class="text-md font-medium text-gray-900">Parent/Guardian Information</h4>
+                    </div>
+
+                    <div class="grid grid-cols-6 gap-6">
+                        <div class="col-span-6 sm:col-span-3">
+                            <label for="{{ form.parent_first_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Parent First Name
+                            </label>
+                            {{ form.parent_first_name|add_class:"mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" }}
+                        </div>
+
+                        <div class="col-span-6 sm:col-span-3">
+                            <label for="{{ form.parent_last_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Parent Last Name
+                            </label>
+                            {{ form.parent_last_name|add_class:"mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" }}
+                        </div>
+
+                        <div class="col-span-6 sm:col-span-3">
+                            <label for="{{ form.parent_mobile.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Parent Mobile
+                            </label>
+                            {{ form.parent_mobile|add_class:"mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" }}
+                        </div>
+
+                        <div class="col-span-6 sm:col-span-3">
+                            <label for="{{ form.parent_email.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Parent Email
+                            </label>
+                            {{ form.parent_email|add_class:"mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" }}
+                        </div>
+                    </div>
+                </div>
+                <div class="px-4 py-3 bg-gray-50 text-right sm:px-6 flex justify-between">
+                    <a href="{% url 'students' %}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Cancel
+                    </a>
+                    <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Update Student
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock %}

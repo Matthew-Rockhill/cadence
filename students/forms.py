@@ -14,11 +14,25 @@ class StudentForm(forms.ModelForm):
             'parent_email'
         ]
         widgets = {
-            'student_first_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'student_last_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'student_mobile': forms.TextInput(attrs={'class': 'form-control'}),
-            'parent_first_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'parent_last_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'parent_mobile': forms.TextInput(attrs={'class': 'form-control'}),
-            'parent_email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'student_first_name': forms.TextInput(attrs={
+                'class': 'mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md'
+            }),
+            'student_last_name': forms.TextInput(attrs={
+                'class': 'mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md'
+            }),
+            'student_mobile': forms.TextInput(attrs={
+                'class': 'mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md'
+            }),
+            'parent_first_name': forms.TextInput(attrs={
+                'class': 'mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md'
+            }),
+            'parent_last_name': forms.TextInput(attrs={
+                'class': 'mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md'
+            }),
+            'parent_mobile': forms.TextInput(attrs={
+                'class': 'mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md'
+            }),
+            'parent_email': forms.EmailInput(attrs={
+                'class': 'mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md'
+            }),
         }

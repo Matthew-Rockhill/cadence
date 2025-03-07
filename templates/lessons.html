@@ -1,80 +1,159 @@
 {% extends 'base.html' %}
+{% load form_tags %}
 
 {% block content %}
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-header">Log a Lesson</div>
-                <div class="card-body">
-                    <form method="post" action="{% url 'log_lesson' %}">
-                        {% csrf_token %}
-                        <div class="form-group mb-3">
-                            <label for="{{ form.student.id_for_label }}">Student</label>
-                            {{ form.student }}
+    <div class="mb-6">
+        <h1 class="text-2xl font-semibold text-gray-900">Lessons</h1>
+        <p class="mt-1 text-sm text-gray-600">Track and manage your tutoring sessions</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <!-- Log a Lesson Form -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">
+                    Log a Lesson
+                </h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                    Record an individual tutoring session
+                </p>
+            </div>
+            <div class="px-4 py-5 sm:p-6">
+                <form method="post" action="{% url 'log_lesson' %}">
+                    {% csrf_token %}
+                    <div class="space-y-6">
+                        <div>
+                            <label for="{{ form.student.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Student
+                            </label>
+                            <div class="mt-1">
+                                {{ form.student }}
+                            </div>
                         </div>
-                        <div class="form-group mb-3">
-                            <label for="{{ form.lesson_date.id_for_label }}">Lesson Date</label>
-                            {{ form.lesson_date }}
+
+                        <div>
+                            <label for="{{ form.lesson_date.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Lesson Date
+                            </label>
+                            <div class="mt-1">
+                                {{ form.lesson_date }}
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-primary">Log Lesson</button>
-                    </form>
-                </div>
+
+                        <div>
+                            <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Log Lesson
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-header">Bulk Log Lessons</div>
-                <div class="card-body">
-                    <form method="post" action="{% url 'bulk_log_lessons' %}">
-                        {% csrf_token %}
-                        <div class="form-group mb-3">
-                            <label for="student">Student</label>
-                            <select name="student" class="form-control" required>
-                                <option value="">Select a student</option>
-                                {% for student in students %}
-                                    <option value="{{ student.id }}">{{ student.student_first_name }} {{ student.student_last_name }}</option>
-                                {% endfor %}
-                            </select>
+
+        <!-- Bulk Log Lessons Form -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">
+                    Bulk Log Lessons
+                </h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                    Record multiple sessions at once
+                </p>
+            </div>
+            <div class="px-4 py-5 sm:p-6">
+                <form method="post" action="{% url 'bulk_log_lessons' %}">
+                    {% csrf_token %}
+                    <div class="space-y-6">
+                        <div>
+                            <label for="student" class="block text-sm font-medium text-gray-700">
+                                Student
+                            </label>
+                            <div class="mt-1">
+                                <select name="student" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" required>
+                                    <option value="">Select a student</option>
+                                    {% for student in students %}
+                                        <option value="{{ student.id }}">{{ student.student_first_name }} {{ student.student_last_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
-                        <div class="form-group mb-3">
-                            <label for="dates">Dates (one per line, YYYY-MM-DD format)</label>
-                            <textarea name="dates" class="form-control" rows="5" placeholder="2025-03-01
+
+                        <div>
+                            <label for="dates" class="block text-sm font-medium text-gray-700">
+                                Dates (one per line, YYYY-MM-DD format)
+                            </label>
+                            <div class="mt-1">
+                                <textarea name="dates" rows="5" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="2025-03-01
 2025-03-08
 2025-03-15
 2025-03-22
 2025-03-29" required></textarea>
+                            </div>
+                            <p class="mt-2 text-sm text-gray-500">Enter one date per line in YYYY-MM-DD format.</p>
                         </div>
-                        <button type="submit" class="btn btn-primary">Bulk Log Lessons</button>
-                    </form>
-                </div>
+
+                        <div>
+                            <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Bulk Log Lessons
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">All Lessons</div>
-                <div class="card-body">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Student</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for lesson in lessons %}
+
+    <!-- Lesson History -->
+    <div class="mt-8">
+        <div class="sm:flex sm:items-center">
+            <div class="sm:flex-auto">
+                <h2 class="text-xl font-semibold text-gray-900">Lesson History</h2>
+                <p class="mt-2 text-sm text-gray-700">A complete list of all tutoring sessions you've recorded.</p>
+            </div>
+        </div>
+        <div class="mt-4 flex flex-col">
+            <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
+                    <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-300">
+                            <thead class="bg-gray-50">
                                 <tr>
-                                    <td>{{ lesson.lesson_date }}</td>
-                                    <td>{{ lesson.student.student_first_name }} {{ lesson.student.student_last_name }}</td>
+                                    <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Date</th>
+                                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Student</th>
+                                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Day of Week</th>
+                                    <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                                        <span class="sr-only">Actions</span>
+                                    </th>
                                 </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="2">No lessons logged yet.</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 bg-white">
+                                {% for lesson in lessons %}
+                                    <tr>
+                                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                                            {{ lesson.lesson_date }}
+                                        </td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                            {{ lesson.student.student_first_name }} {{ lesson.student.student_last_name }}
+                                        </td>
+                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                            {{ lesson.lesson_date|date:"l" }}
+                                        </td>
+                                        <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                            <a href="{% url 'delete_lesson' lesson.id %}" class="text-red-600 hover:text-red-900">
+                                                <i class="fas fa-trash-alt" title="Delete"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6">
+                                            No lessons logged yet.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
