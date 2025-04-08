@@ -15,145 +15,131 @@ from django.core.mail import EmailMessage
 from django.conf import settings
 import logging
 from datetime import datetime
+import time
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 
 logger = logging.getLogger(__name__)
 
+def generate_pdf_content(html_content):
+    """Generate PDF content from HTML with proper error handling"""
+    result = BytesIO()
+    pdf = pisa.pisaDocument(BytesIO(html_content.encode("UTF-8")), result)
+    
+    if pdf.err:
+        raise Exception(f"PDF generation failed: {pdf.err}")
+    
+    return result.getvalue()
+
+def save_pdf_backup(pdf_content, invoice):
+    """Save PDF backup to storage"""
+    filename = f"invoices/backup_{invoice.id}_{invoice.month}.pdf"
+    try:
+        default_storage.save(filename, ContentFile(pdf_content))
+        return filename
+    except Exception as e:
+        logger.error(f"Failed to save PDF backup: {str(e)}")
+        return None
+
 @login_required
 def generate_pdf_invoice(request, invoice_id):
-    """
-    Generate a PDF invoice for download
-    """
+    """Generate a PDF invoice for download with improved error handling"""
     try:
-        # Get the invoice
         invoice = get_object_or_404(Invoice, pk=invoice_id)
-        
-        # Get lessons for this invoice
         lessons = get_lessons_for_invoice(invoice)
         
-        # Prepare context
         context = {
             'invoice': invoice,
             'lessons': lessons,
             'year_month': invoice.month,
         }
         
-        # Render template
         template = get_template('invoice_pdf.html')
         html = template.render(context)
         
-        # Create PDF
-        result = BytesIO()
-        pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
+        # Generate PDF with proper error handling
+        pdf_content = generate_pdf_content(html)
         
-        if not pdf.err:
-            # Generate filename
-            filename = f"Invoice_{invoice.student.student_last_name}_{invoice.month}.pdf"
-            
-            # Create HTTP response with PDF
-            response = HttpResponse(result.getvalue(), content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename="{filename}"'
-            return response
+        # Save backup
+        backup_path = save_pdf_backup(pdf_content, invoice)
+        if backup_path:
+            logger.info(f"PDF backup saved: {backup_path}")
         
-        # If PDF generation failed
-        logger.error(f"Error generating PDF for invoice {invoice_id}: PDF creation error")
-        messages.error(request, "Error generating PDF invoice.")
-        return redirect('generate_invoice')
+        # Generate filename
+        filename = f"Invoice_{invoice.student.student_last_name}_{invoice.month}.pdf"
+        
+        # Create HTTP response with PDF
+        response = HttpResponse(pdf_content, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
     
     except Exception as e:
         logger.error(f"Error generating PDF for invoice {invoice_id}: {str(e)}")
-        messages.error(request, f"Error generating PDF invoice: {str(e)}")
+        messages.error(request, "We encountered an error generating your invoice. Please try again or contact support.")
         return redirect('dashboard')
+
+def send_email_with_retry(email_message, max_retries=3, delay=1):
+    """Send email with retry mechanism"""
+    for attempt in range(max_retries):
+        try:
+            email_message.send()
+            return True
+        except Exception as e:
+            if attempt == max_retries - 1:
+                raise
+            logger.warning(f"Email send attempt {attempt + 1} failed: {str(e)}")
+            time.sleep(delay * (attempt + 1))  # Exponential backoff
 
 @login_required
 def email_invoice(request, invoice_id):
-    """
-    Email an invoice to the student's parent
-    """
+    """Email an invoice to the student's parent with improved error handling"""
     try:
-        # Get the invoice
         invoice = get_object_or_404(Invoice, pk=invoice_id)
         
-        # Check if student has parent email
         if not invoice.student.parent_email:
-            messages.error(request, f"Cannot send email: {invoice.student.student_first_name} {invoice.student.student_last_name} does not have a parent email specified.")
-            logger.error(f"Email invoice failed: No parent email for student {invoice.student.student_first_name} {invoice.student.student_last_name}")
+            messages.error(
+                request, 
+                f"Cannot send email: {invoice.student.student_first_name} {invoice.student.student_last_name} does not have a parent email specified."
+            )
             return redirect('view_invoice', invoice_id=invoice.id)
         
-        # Get lessons for this invoice
+        # Generate PDF
         lessons = get_lessons_for_invoice(invoice)
-        
-        # Prepare context
         context = {
             'invoice': invoice,
             'lessons': lessons,
             'year_month': invoice.month,
         }
         
-        # Render template
         template = get_template('invoice_pdf.html')
         html = template.render(context)
+        pdf_content = generate_pdf_content(html)
         
-        # Create PDF
-        result = BytesIO()
-        pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
+        # Save backup
+        backup_path = save_pdf_backup(pdf_content, invoice)
         
-        if not pdf.err:
-            # Generate filename
-            filename = f"Invoice_{invoice.student.student_last_name}_{invoice.month}.pdf"
-            
-            # Create email
-            subject = f"Cadence Tutoring Invoice - {invoice.month}"
-            message = f"""
-Dear {invoice.student.parent_first_name or 'Parent'},
-
-Please find attached the invoice for {invoice.student.student_first_name}'s tutoring sessions for {invoice.month}.
-
-Invoice Summary:
-- Number of lessons: {invoice.lessons}
-- Total amount due: R{invoice.total_amount}
-
-Payment Details:
-- Bank: Standard Bank
-- Account: 123456789
-- Reference: {invoice.student.student_last_name}_{invoice.month}
-
-Payment is due within 14 days of receipt.
-
-Thank you for choosing Cadence Tutoring.
-
-Best regards,
-Cadence Tutoring
-            """
-            
-            # Create the email
-            email = EmailMessage(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [invoice.student.parent_email]
-            )
-            
-            # Attach the PDF
-            email.attach(filename, result.getvalue(), 'application/pdf')
-            
-            # Send the email
-            email.send()
-            
-            # Log and redirect
-            messages.success(request, f"Invoice emailed to {invoice.student.parent_email} successfully!")
-            logger.info(f"Invoice emailed to {invoice.student.parent_email} for student {invoice.student.student_first_name} {invoice.student.student_last_name}")
-            return redirect('view_invoice', invoice_id=invoice.id)
+        # Prepare email
+        email = EmailMessage(
+            subject=f'Invoice for {invoice.month} - {invoice.student.student_first_name} {invoice.student.student_last_name}',
+            body=f'Please find attached the invoice for {invoice.month}.',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[invoice.student.parent_email]
+        )
         
-        else:
-            # PDF generation failed
-            logger.error(f"Error emailing invoice {invoice_id}: PDF creation error")
-            messages.error(request, "Error creating PDF for email attachment.")
-            return redirect('view_invoice', invoice_id=invoice.id)
-            
+        # Attach PDF
+        filename = f"Invoice_{invoice.student.student_last_name}_{invoice.month}.pdf"
+        email.attach(filename, pdf_content, 'application/pdf')
+        
+        # Send email with retry
+        send_email_with_retry(email)
+        
+        messages.success(request, f"Invoice has been sent to {invoice.student.parent_email}")
+        return redirect('view_invoice', invoice_id=invoice.id)
+        
     except Exception as e:
         logger.error(f"Error emailing invoice {invoice_id}: {str(e)}")
-        messages.error(request, f"Error emailing invoice: {str(e)}")
-        return redirect('view_invoice', invoice_id=invoice.id)
+        messages.error(request, "We encountered an error sending your invoice. Please try again or contact support.")
+        return redirect('view_invoice', invoice_id=invoice_id)
 
 def get_lessons_for_invoice(invoice):
     """Helper function to get lessons for an invoice based on its date range or month"""
@@ -236,7 +222,8 @@ def generate_invoice(request):
                         'start_date': start_date,
                         'end_date': end_date,
                         'lessons': 0,
-                        'total_amount': 0.00
+                        'total_amount': 0.00,
+                        'rate_per_lesson': 350.00  # Default rate per lesson
                     }
                 )
                 

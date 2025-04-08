@@ -1,6 +1,8 @@
 from django import forms
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from .models import Invoice
+from decimal import Decimal
 
 class InvoiceGenerationForm(forms.Form):
     PERIOD_CHOICES = [
@@ -34,7 +36,7 @@ class InvoiceGenerationForm(forms.Form):
             'id': 'invoice_end_date'
         })
     )
-    
+
     def clean(self):
         cleaned_data = super().clean()
         period_type = cleaned_data.get('period_type')
@@ -67,3 +69,14 @@ class InvoiceGenerationForm(forms.Form):
 
 class FinalizeInvoiceForm(forms.Form):
     invoice_id = forms.IntegerField(widget=forms.HiddenInput())
+
+    def clean(self):
+        cleaned_data = super().clean()
+        invoice_id = cleaned_data.get('invoice_id')
+        try:
+            invoice = Invoice.objects.get(pk=invoice_id)
+            if invoice.total_amount <= 0:
+                raise forms.ValidationError("Cannot finalize an invoice with zero or negative amount")
+        except Invoice.DoesNotExist:
+            raise forms.ValidationError("Invalid invoice")
+        return cleaned_data
